@@ -1,0 +1,4 @@
+tensorflow>=2.13
+matplotlib
+numpy
+tensorflow-metal

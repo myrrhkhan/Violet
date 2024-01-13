@@ -1,3 +1,9 @@
+# Custom stuff
+.DS_Store
+src-py/IAM_Words
+src-py/IAM_Words.zip
+src-py/data
+
 # Logs
 logs
 *.log

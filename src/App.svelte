@@ -1,16 +1,17 @@
 <script lang="ts">
-  import Greet from './lib/Greet.svelte'
+    import Canvas from './lib/Canvas.svelte'
 </script>
 
 <main class="container">
-  <h1>Welcome to Vi!</h1>
-
-  <div class="row">
-    <Greet />
-  </div>
-
-
+    <h1>Welcome to Vi!</h1>
+    <p>Draw below, and click the button to convert to text.</p>
+    <Canvas />
+    
+    
 </main>
 
 <style>
+    @import './styles.css';
+
+    
 </style>

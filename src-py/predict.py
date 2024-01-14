@@ -1,25 +1,28 @@
 # %% [markdown]
-# # Prediction Script
-# Contains function that takes image and makes prediction from model.
+#  # Prediction Script
+#  Contains function that takes image and makes prediction from model.
 
 # %% [markdown]
-# ## Imports
+#  ## Imports
 
 # %%
 from tensorflow.keras.layers import StringLookup
 import tensorflow as tf
 import numpy as np
+import sys
+
 
 # %% [markdown]
-# ## Load model
+#  ## Load model
 
 # %%
 def load_model(dotkeras_path: str):
     prediction_model = tf.keras.models.load_model(dotkeras_path)
     return prediction_model
 
+
 # %% [markdown]
-# ## Image preprocess functions
+#  ## Image preprocess functions
 
 # %%
 AUTOTUNE = tf.data.AUTOTUNE
@@ -30,17 +33,15 @@ image_width = 128
 image_height = 32
 max_len = 21
 
-charfile = open('./models/characters.txt', 'r')
-characters = charfile.read()
-characters = characters.split(' ')
+# placeholder variables
+characters = []
+char_to_num = []
+num_to_char = []
 
-# Mapping characters to integers.
-char_to_num = StringLookup(vocabulary=list(characters), mask_token=None)
-
-# Mapping integers back to original characters.
-num_to_char = StringLookup(
-    vocabulary=char_to_num.get_vocabulary(), mask_token=None, invert=True
-)
+# placeholder variables
+characters = []
+char_to_num = []
+num_to_char = []
 
 def distortion_free_resize(image, img_size):
     w, h = img_size
@@ -54,33 +55,29 @@ def distortion_free_resize(image, img_size):
     image = tf.image.flip_left_right(image)
     return image
 
-def preprocess_image(image_path, img_size=(image_width, image_height)):
-    # plot image as test
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    image = tf.io.read_file(image_path)
-    image = tf.image.decode_png(image, 1) # 1: output to grayscale. tensor of uint8 or uint16
+def preprocess_image(base64_img, img_size=(image_width, image_height)):
+    image = tf.io.decode_image(tf.io.decode_base64(base64_img), channels=1)
     image = distortion_free_resize(image, img_size)
     image = tf.cast(image, tf.float32) / 255.0 # cast to float instead of int
     return image
 
-def process_image_labels(image_path, label):
+def process_image_labels(base64_img, label):
     # calls above functions, gets preprocessed image and label, returns as dict
-    image = preprocess_image(image_path)
+    image = preprocess_image(base64_img)
     return {"image": image, "label": label}
 
-def prepare_dataset(image_paths, labels):
+def prepare_dataset(base64_imgs, labels):
     # calls all functions above, makes tf dataset with image paths, 
     # maps image paths and labels to tf images and tf labels
     # TODO look up AUTOTUNE
-    dataset = tf.data.Dataset.from_tensor_slices((image_paths, labels)).map(
+    dataset = tf.data.Dataset.from_tensor_slices((base64_imgs, labels)).map(
         process_image_labels, num_parallel_calls=AUTOTUNE
     )
     return dataset.batch(batch_size).cache().prefetch(AUTOTUNE)
 
+
 # %% [markdown]
-# ## Image prediction function(s)
+#  ## Image prediction function(s)
 
 # %%
 # A utility function to decode the output of the network.
@@ -98,12 +95,32 @@ def decode_batch_predictions(pred):
         output_text.append(res)
     return output_text
 
+
 # %% [markdown]
-# ## Main function
+#  ## Main function
 
 # %%
-def predict(img_path: str, dotkeras_path: str) -> str:
-    dataset = prepare_dataset([img_path], ["null"])
+def update_charthing(arg1_char):
+    global characters
+    global char_to_num
+    global num_to_char
+    charfile = open(arg1_char, 'r')
+    characters = charfile.read()
+    characters = characters.split(' ')
+
+    # Mapping characters to integers.
+    char_to_num = StringLookup(vocabulary=list(characters), mask_token=None)
+
+    # Mapping integers back to original characters.
+    num_to_char = StringLookup(
+        vocabulary=char_to_num.get_vocabulary(), mask_token=None, invert=True
+    )
+
+def predict(img_base64: str, dotkeras_path: str, charpath: str) -> str:
+    update_charthing(charpath)
+    img_base64 = img_base64.replace('+', '-')
+    img_base64 = img_base64.replace('/', '_')
+    dataset = prepare_dataset([img_base64], ["null"])
     prediction_model = load_model(dotkeras_path)
     for batch in dataset:
         batch_image = batch["image"]
@@ -113,7 +130,14 @@ def predict(img_path: str, dotkeras_path: str) -> str:
     return pred_text
 
 # %%
-print(predict('./data/words/a01/a01-000u/a01-000u-00-00.png', './models/50_epochs.keras'))
-print(predict('./data/words/a02/a02-000/a02-000-00-04.png', './models/50_epochs.keras'))
+if __name__ == "__main__":
+    arg1_char = sys.argv[1]
+    arg2_model = sys.argv[2]
+    arg3_64 = sys.argv[3]
+
+    print(predict(arg3_64, arg2_model, arg1_char))
 
 
+
+
+# %%

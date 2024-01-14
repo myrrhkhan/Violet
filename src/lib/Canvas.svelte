@@ -10,6 +10,19 @@
         position: relative;
         text-align: center;
     }
+
+	.capture-form-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.capture-form-container input {
+		margin-right: 20px;;
+		/* transform: translateX(-50%); */
+	}
+	.capture-form-container button {
+		margin-left: 20px;
+	}
 	
 	canvas {
 		border: 2px solid var(--color-primary);
@@ -18,7 +31,7 @@
 		margin: 0 auto;
 	}
 	
-	button {
+	input, button {
 		color: var(--color-secondary);
     	background-color: var(--color-accent);
 		display: block;
@@ -36,6 +49,11 @@
 
 		transition: border-color 0.25s;
 		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	form {
+		display: block;
+		margin: 10px 0 0;
 	}
 
 	h2 {
@@ -62,9 +80,12 @@
 	
 	const canvasWidth = 800;  // Larger canvas size
 	const canvasHeight = 200;
-	
+
 	let resultstring = writable("");
-	
+	let loaded = false;
+	let outputValue = $resultstring;
+	$: outputValue = $resultstring
+
 	function startDrawing(event: MouseEvent) {
 		isDrawing = true;
 		const canvasRect = canvas.getBoundingClientRect();
@@ -107,8 +128,43 @@
         // console.log(image);
 		// Pass the image to the Rust side using Tauri's invoke function
 		resultstring.set(await invoke('image_to_text', { image }) as string);
+		loaded = true;
 		console.log(resultstring);	
 	}
+
+	function erase() {
+		context.clearRect(0, 0, canvasWidth, canvasHeight);
+		resultstring = writable("");
+		loaded = false;
+	}
+
+    function copyToClipboard(text: string) {
+        // Create a temporary textarea element
+        const textarea = document.createElement('textarea');
+        
+        // Set the value to the text you want to copy
+        textarea.value = text;
+        
+        // Append the textarea to the document
+        document.body.appendChild(textarea);
+        
+        // Select the text in the textarea
+        textarea.select();
+        
+        // Copy the selected text to the clipboard
+        document.execCommand('copy');
+        
+        // Remove the temporary textarea element
+        document.body.removeChild(textarea);
+    }
+
+	function copyResultToClipboard() {
+        // Get the value from the input field
+        const inputValue = outputValue;
+        
+        // Copy the value to the clipboard
+        copyToClipboard(inputValue);
+    }
 </script>
 
 <div class="canvas-container">
@@ -123,8 +179,16 @@
 	></canvas>
 
     <div class="bottom-container">
-    	<button on:click={captureImage}>Capture and Analyze</button>
-        <h2>{$resultstring}</h2>
+		<button on:click={captureImage}>Capture and Analyze</button>
+		<button on:click={erase}>Erase</button>
+        <div class="capture-form-container">
+            {#if loaded}
+                <form class="row" on:submit|preventDefault={copyResultToClipboard}>
+                    <input id="output" bind:value={outputValue}/>
+                    <button type="submit">Copy</button>
+                </form>
+            {/if}
+        </div>
     </div>
 
 </div>

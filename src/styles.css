@@ -1,32 +1,37 @@
 :root {
-    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
-    
-    --color-primary: #afd0bf;
-    --color-secondary: #f4b266;
-    --color-tertiary: #e2efde;
-    --color-accent: #9b7e46;
-    --color-background: #808f87;
-    
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-text-size-adjust: 100%;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  --color-primary: #afd0bf;
+  --color-secondary: #f4b266;
+  --color-tertiary: #e2efde;
+  --color-accent: #9b7e46;
+  --color-background: #808f87;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-    background-color: var(--color-background);
+  background-color: var(--color-background);
 }
 
 h1 {
-    color: var(--color-tertiary);
-    text-align: center;
+  color: var(--color-tertiary);
+  text-align: center;
+}
+
+h2 {
+  color: var(--color-secondary);
+  text-align: center;
 }
 
 p {
-    text-align: center;
-    color: var(--color-primary)
+  text-align: center;
+  color: var(--color-primary);
 }

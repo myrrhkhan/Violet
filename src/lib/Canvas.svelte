@@ -5,6 +5,11 @@
 		position: relative;
 		text-align: center;
 	}
+
+    .bottom-container {
+        position: relative;
+        text-align: center;
+    }
 	
 	canvas {
 		border: 2px solid var(--color-primary);
@@ -18,7 +23,7 @@
     	background-color: var(--color-accent);
 		display: block;
 		margin-top: 10px;
-		position: absolute;
+		position: relative;
 		left: 50%;
 		transform: translateX(-50%);
 		cursor: pointer;
@@ -33,9 +38,15 @@
 		box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
 	}
 
+	h2 {
+		display: block;
+        margin: 10px 0 0;
+	}
+
 	button:hover {
-    border-color: var(--color-accent);
-}
+        border-color: var(--color-accent);
+    }
+
 	button:active {
 		border-color: var(--color-accent);
 		background-color: var(--color-primary);
@@ -44,6 +55,7 @@
 
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/tauri"
+    import { writable } from "svelte/store";
 	let isDrawing = false;
 	let context: CanvasRenderingContext2D;
 	let canvas: HTMLCanvasElement;
@@ -51,8 +63,7 @@
 	const canvasWidth = 800;  // Larger canvas size
 	const canvasHeight = 200;
 	
-	const targetWidth = 128;   // Target dimensions for processing or sending
-	const targetHeight = 32;
+	let resultstring = writable("still here?");
 	
 	function startDrawing(event: MouseEvent) {
 		isDrawing = true;
@@ -91,12 +102,12 @@
 		ctx.drawImage(canvas, 0, 0);
 		
 		// Capture the image from the resized canvas
-		const image: string = newCanvas.toDataURL('image/png');
+		const image: string = newCanvas.toDataURL('image/png').replace('data:image/png;base64,', '');
 		
+        // console.log(image);
 		// Pass the image to the Rust side using Tauri's invoke function
-		// await invoke('send_image_to_rust', { image });
-
-        console.log(image);
+		resultstring.set(await invoke('image_to_text', { image }) as string);
+		console.log(resultstring);	
 	}
 </script>
 
@@ -110,6 +121,10 @@
 		on:mouseup={stopDrawing}
 		on:mouseleave={stopDrawing}
 	></canvas>
-	
-	<button on:click={captureImage}>Capture and Send Image</button>
+
+    <div class="bottom-container">
+    	<button on:click={captureImage}>Capture and Analyze</button>
+        <h2>{$resultstring}</h2>
+    </div>
+
 </div>

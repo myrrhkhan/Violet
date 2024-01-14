@@ -63,7 +63,7 @@
 	const canvasWidth = 800;  // Larger canvas size
 	const canvasHeight = 200;
 	
-	let resultstring = writable("still here?");
+	let resultstring = writable("");
 	
 	function startDrawing(event: MouseEvent) {
 		isDrawing = true;

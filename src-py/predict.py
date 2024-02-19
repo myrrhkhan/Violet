@@ -1,27 +1,36 @@
+import base64
 import sys
+import struct
 import io
 from PIL import Image
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
-def predict(img_base64, dotkeras_path: str, charpath: str) -> str:
-    # Image.open(io.BytesIO(img_base64))
+
+
+def predict(img_base64) -> str:
 
     processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
     model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
-
-    img_base64 = img_base64.replace('+', '-')
-    img_base64 = img_base64.replace('/', '_')
-    img_base64 = bytes(img_base64, encoding='utf8')
-    image = Image.open(io.BytesIO(img_base64))
+    print("12")
+    img_base64 = base64.b64decode(img_base64)
+    
+    image = Image.open(io.BytesIO(img_base64)).convert("RGB")
+    
     pixel_values = processor(image, return_tensors="pt").pixel_values
     generated_ids = model.generate(pixel_values)
     generated_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-    print(generated_text)
+    print("returning")
     return generated_text
 
 if __name__ == "__main__":
-    arg1_char = sys.argv[1]
-    arg2_model = sys.argv[2]
-    arg3_64 = sys.argv[3]
-
-    print(predict(arg3_64, arg2_model, arg1_char))
+    img = sys.argv[1]
+    print("Python arg")
+    print(img)
+    try:
+        prediction = predict(img)
+    except Exception as e:
+        print("Error")
+        print(e)
+        sys.exit(1)
+    print("Prediction:")
+    print(prediction)

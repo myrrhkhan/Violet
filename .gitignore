@@ -1,8 +1,8 @@
 # Custom stuff
 .DS_Store
-src-py/IAM_Words
-src-py/IAM_Words.zip
-src-py/data
+server/IAM_Words
+server/IAM_Words.zip
+server/data
 
 # Logs
 logs

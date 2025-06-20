@@ -1,7 +1,5 @@
 flask
-tensorflow>=2.13
 matplotlib
 numpy
-tensorflow-metal
-pyyaml
-h5py
+transformers
+torch

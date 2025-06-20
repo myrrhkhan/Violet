@@ -1,3 +1,6 @@
+.venv
+__pycache__/
+
 # Custom stuff
 .DS_Store
 server/IAM_Words

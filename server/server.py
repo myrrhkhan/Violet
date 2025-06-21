@@ -1,17 +1,21 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from predict import predict_image
 from PIL import Image
 import io
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/predict', methods=['POST'])
 def predict_endpoint():
     try:
+        print(f"Content-Type received: '{request.content_type}'")
+        print(f"Content-Type starts with 'image/': {request.content_type.startswith('image/')}")
+        print(f"Data length: {len(request.data) if request.data else 0}")
         # Get image from request
         if request.content_type.startswith('image/'):
             image_data = request.data
-            print(request.data)
             if not image_data:
                 return jsonify({'error': 'Empty image data'}), 400
             image = Image.open(io.BytesIO(image_data)).convert("RGB")

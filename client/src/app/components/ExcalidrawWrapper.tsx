@@ -6,6 +6,16 @@ import "@excalidraw/excalidraw/index.css";
 
 const ExcalidrawWrapper: React.FC = () => {
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <div style={{ height: "600px", width: "1100px" }}></div>;
+  }
+
   return (
     <div>
       <button
@@ -26,10 +36,14 @@ const ExcalidrawWrapper: React.FC = () => {
             files,
           });
           // submit to server
-          const response = await fetch("http://192.168.1.205:8711/predict", {
-            method: "POST",
-            body: blob,
-          });
+          console.log("sending");
+          const response = await fetch(
+            "https://fwkxoazxi2.execute-api.us-east-1.amazonaws.com/predict-ocr",
+            {
+              method: "POST",
+              body: blob,
+            },
+          );
           const json = await response.text();
           const p = document.createElement("p");
           p.innerText = json;

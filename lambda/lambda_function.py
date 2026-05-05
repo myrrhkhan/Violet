@@ -7,7 +7,8 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from PIL import Image
 
 MODEL_ID = "microsoft/trocr-base-handwritten"
-HF_CACHE_DIR = "/tmp/huggingface"
+BAKED_CACHE_DIR = "/var/task/hf-cache"
+RUNTIME_CACHE_DIR = "/tmp/huggingface"
 processor = None
 model = None
 
@@ -15,10 +16,25 @@ model = None
 def get_model():
     global processor, model
     if processor is None or model is None:
-        os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
-        os.environ.setdefault("TRANSFORMERS_CACHE", HF_CACHE_DIR)
-        processor = TrOCRProcessor.from_pretrained(MODEL_ID, cache_dir=HF_CACHE_DIR)
-        model = VisionEncoderDecoderModel.from_pretrained(MODEL_ID, cache_dir=HF_CACHE_DIR)
+        os.environ.setdefault("HF_HOME", BAKED_CACHE_DIR)
+        os.environ.setdefault("TRANSFORMERS_CACHE", BAKED_CACHE_DIR)
+        try:
+            processor = TrOCRProcessor.from_pretrained(
+                MODEL_ID,
+                cache_dir=BAKED_CACHE_DIR,
+                local_files_only=True,
+            )
+            model = VisionEncoderDecoderModel.from_pretrained(
+                MODEL_ID,
+                cache_dir=BAKED_CACHE_DIR,
+                local_files_only=True,
+            )
+        except Exception:
+            # Fallback for local dev if baked assets are unavailable.
+            os.environ["HF_HOME"] = RUNTIME_CACHE_DIR
+            os.environ["TRANSFORMERS_CACHE"] = RUNTIME_CACHE_DIR
+            processor = TrOCRProcessor.from_pretrained(MODEL_ID, cache_dir=RUNTIME_CACHE_DIR)
+            model = VisionEncoderDecoderModel.from_pretrained(MODEL_ID, cache_dir=RUNTIME_CACHE_DIR)
     return processor, model
 
 

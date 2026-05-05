@@ -4,6 +4,10 @@ import React, { useState } from "react";
 
 import "@excalidraw/excalidraw/index.css";
 
+const OCR_ENDPOINT =
+  process.env.NEXT_PUBLIC_OCR_ENDPOINT ??
+  "https://fwkxoazxi2.execute-api.us-east-1.amazonaws.com/predict-ocr";
+
 const ExcalidrawWrapper: React.FC = () => {
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [isClient, setIsClient] = useState(false);
@@ -37,13 +41,10 @@ const ExcalidrawWrapper: React.FC = () => {
           });
           // submit to server
           console.log("sending");
-          const response = await fetch(
-            "https://fwkxoazxi2.execute-api.us-east-1.amazonaws.com/predict-ocr",
-            {
-              method: "POST",
-              body: blob,
-            },
-          );
+          const response = await fetch(OCR_ENDPOINT, {
+            method: "POST",
+            body: blob,
+          });
           const json = await response.text();
           const p = document.createElement("p");
           p.innerText = json;

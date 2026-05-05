@@ -22,6 +22,8 @@ AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account 
 ECR_REPO_NAME="${ECR_REPO_NAME:-${FUNCTION_NAME}}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}"
+SMOKE_TEST_LOCAL="${SMOKE_TEST_LOCAL:-0}"
+LOCAL_TEST_IMAGE="${LOCAL_TEST_IMAGE:-./client/testimg.jpg}"
 
 echo "Using:"
 echo "  FUNCTION_NAME=${FUNCTION_NAME}"
@@ -45,6 +47,41 @@ aws ecr get-login-password --region "${AWS_REGION}" \
 
 echo "Building image from lambda/Dockerfile..."
 docker build --platform linux/amd64 -t "${IMAGE_URI}" "./lambda"
+
+if [[ "${SMOKE_TEST_LOCAL}" == "1" ]]; then
+  if [[ ! -f "${LOCAL_TEST_IMAGE}" ]]; then
+    echo "SMOKE_TEST_LOCAL=1 but image file not found: ${LOCAL_TEST_IMAGE}"
+    exit 1
+  fi
+
+  echo "Running local smoke test before push..."
+  SMOKE_CONTAINER_NAME="violet-ocr-smoke"
+  docker rm -f "${SMOKE_CONTAINER_NAME}" >/dev/null 2>&1 || true
+  docker run --rm -d --name "${SMOKE_CONTAINER_NAME}" -p 9000:8080 "${IMAGE_URI}" >/dev/null
+  cleanup_smoke() {
+    docker rm -f "${SMOKE_CONTAINER_NAME}" >/dev/null 2>&1 || true
+  }
+  trap cleanup_smoke EXIT
+
+  for _ in $(seq 1 60); do
+    if curl -sS "http://127.0.0.1:9000/2015-03-31/functions/function/invocations" -d '{}' >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+
+  python3 -c 'import base64, json, pathlib; p=pathlib.Path("'"${LOCAL_TEST_IMAGE}"'"); print(json.dumps({"httpMethod":"POST","isBase64Encoded":True,"body":base64.b64encode(p.read_bytes()).decode()}))' > /tmp/violet-smoke-payload.json
+  SMOKE_RESPONSE="$(curl -sS -X POST "http://127.0.0.1:9000/2015-03-31/functions/function/invocations" -H "Content-Type: application/json" -d @/tmp/violet-smoke-payload.json)"
+  SMOKE_STATUS="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("statusCode",""))' "${SMOKE_RESPONSE}")"
+  if [[ "${SMOKE_STATUS}" != "200" ]]; then
+    echo "Local smoke test failed: ${SMOKE_RESPONSE}"
+    exit 1
+  fi
+
+  cleanup_smoke
+  trap - EXIT
+  echo "Local smoke test passed."
+fi
 
 echo "Pushing image to ECR..."
 docker push "${IMAGE_URI}"
